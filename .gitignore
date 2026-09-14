@@ -1,0 +1,36 @@
+# =============================================================================
+# .gitignore — Text-to-SQL RAG Assistant
+# =============================================================================
+
+# Environment variables — NEVER commit this file
+.env
+
+# ChromaDB persistent storage — can be regenerated via setup/setup_chromadb.py
+chroma_db/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+
+# IDE / editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+PROJECT_DETAILS.txt

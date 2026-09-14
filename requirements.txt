@@ -1,0 +1,22 @@
+# Text-to-SQL RAG Assistant — Python Dependencies
+#
+# Install with: pip install -r requirements.txt
+
+# Streamlit — web UI
+streamlit>=1.40.0
+
+# Google GenAI SDK (unified, current) — Gemini LLM + embeddings
+# Imported as: from google import genai
+google-genai>=2.22.0
+
+# ChromaDB — local persistent vector database for schema embeddings
+chromadb>=0.6.0
+
+# MySQL connector — Python to MySQL bridge
+mysql-connector-python>=9.0.0
+
+# Faker — realistic fake data generation for the database
+Faker>=30.0.0
+
+# python-dotenv — load environment variables from .env file
+python-dotenv>=1.0.0
