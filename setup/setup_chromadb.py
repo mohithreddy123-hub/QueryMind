@@ -31,42 +31,42 @@ Usage:
   python setup/setup_chromadb.py --reset    # delete collection and re-embed
 """
 
-import sys
-import os
-import argparse
+import sys 
+import os 
+import argparse 
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys .path .insert (0 ,os .path .join (os .path .dirname (__file__ ),".."))
 
-from google import genai
-import chromadb
+from google import genai 
+import chromadb 
 
-from config.settings import (
-    GEMINI_API_KEY,
-    EMBEDDING_MODEL,
-    CHROMA_PERSIST_DIR,
-    CHROMA_COLLECTION_NAME,
+from config .settings import (
+GEMINI_API_KEY ,
+EMBEDDING_MODEL ,
+CHROMA_PERSIST_DIR ,
+CHROMA_COLLECTION_NAME ,
 )
 
 
-# =============================================================================
-# Schema Documents
-#
-# One document per table. Each document contains:
-#   - Table name and purpose
-#   - Column-by-column description (name, type, meaning)
-#   - Primary key and foreign key information
-#   - Relationships to other tables
-#   - Business meaning (what does each row represent?)
-#   - Query guidance (how should this table be queried?)
-#
-# The quality of these documents directly determines RAG retrieval quality.
-# =============================================================================
 
-SCHEMA_DOCUMENTS = {
 
-    # ─────────────────────────────────────────────────────────────────────────
-    "users": {
-        "document": """
+
+
+
+
+
+
+
+
+
+
+
+
+SCHEMA_DOCUMENTS ={
+
+
+"users":{
+"document":"""
 Table: users
 
 Purpose:
@@ -122,17 +122,17 @@ Query Guidance:
       SELECT COUNT(*) FROM users WHERE MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW())
   - To find customers who placed orders, JOIN with orders on users.id = orders.user_id
   - To find top customers by order count, GROUP BY user_id and COUNT orders
-""".strip(),
-        "metadata": {
-            "table_name": "users",
-            "document_type": "schema",
-            "description": "Customer account information — name, email, city, registration date",
-        },
-    },
+""".strip (),
+"metadata":{
+"table_name":"users",
+"document_type":"schema",
+"description":"Customer account information — name, email, city, registration date",
+},
+},
 
-    # ─────────────────────────────────────────────────────────────────────────
-    "products": {
-        "document": """
+
+"products":{
+"document":"""
 Table: products
 
 Purpose:
@@ -195,17 +195,17 @@ Query Guidance:
     and use SUM(orders.quantity) to get total units sold per product
   - To find highest-rated products, JOIN with reviews on products.id = reviews.product_id
     and use AVG(reviews.rating)
-""".strip(),
-        "metadata": {
-            "table_name": "products",
-            "document_type": "schema",
-            "description": "Product catalogue — name, price, category, stock inventory",
-        },
-    },
+""".strip (),
+"metadata":{
+"table_name":"products",
+"document_type":"schema",
+"description":"Product catalogue — name, price, category, stock inventory",
+},
+},
 
-    # ─────────────────────────────────────────────────────────────────────────
-    "orders": {
-        "document": """
+
+"orders":{
+"document":"""
 Table: orders
 
 Purpose:
@@ -276,17 +276,17 @@ Query Guidance:
       FROM orders o JOIN products p ON o.product_id = p.id
       GROUP BY p.category ORDER BY units_sold DESC
   - Use order_date with DATE(), MONTH(), WEEK(), YEAR() MySQL functions for filtering
-""".strip(),
-        "metadata": {
-            "table_name": "orders",
-            "document_type": "schema",
-            "description": "Customer purchase transactions — which customer bought which product, quantity, and date",
-        },
-    },
+""".strip (),
+"metadata":{
+"table_name":"orders",
+"document_type":"schema",
+"description":"Customer purchase transactions — which customer bought which product, quantity, and date",
+},
+},
 
-    # ─────────────────────────────────────────────────────────────────────────
-    "payments": {
-        "document": """
+
+"payments":{
+"document":"""
 Table: payments
 
 Purpose:
@@ -356,17 +356,17 @@ Query Guidance:
   - IMPORTANT: For true revenue figures, always filter WHERE status = 'paid'
   - pending and failed payments are NOT revenue
   - Use payment_date (not orders.order_date) for payment timing analysis
-""".strip(),
-        "metadata": {
-            "table_name": "payments",
-            "document_type": "schema",
-            "description": "Payment records per order — amount, status (paid/pending/failed), payment date",
-        },
-    },
+""".strip (),
+"metadata":{
+"table_name":"payments",
+"document_type":"schema",
+"description":"Payment records per order — amount, status (paid/pending/failed), payment date",
+},
+},
 
-    # ─────────────────────────────────────────────────────────────────────────
-    "reviews": {
-        "document": """
+
+"reviews":{
+"document":"""
 Table: reviews
 
 Purpose:
@@ -442,21 +442,21 @@ Query Guidance:
       GROUP BY p.id, p.name ORDER BY review_count DESC
   - Use AVG(rating) for average, MIN(rating) for worst single rating,
     MAX(rating) for best single rating
-""".strip(),
-        "metadata": {
-            "table_name": "reviews",
-            "document_type": "schema",
-            "description": "Customer product reviews — star rating (1-5) and written comments",
-        },
-    },
+""".strip (),
+"metadata":{
+"table_name":"reviews",
+"document_type":"schema",
+"description":"Customer product reviews — star rating (1-5) and written comments",
+},
+},
 }
 
 
-# =============================================================================
-# Embedding helper
-# =============================================================================
 
-def get_embedding(client: genai.Client, text: str) -> list[float]:
+
+
+
+def get_embedding (client :genai .Client ,text :str )->list [float ]:
     """
     Generates a vector embedding for the given text using the Gemini
     embedding model configured in settings.py.
@@ -471,143 +471,143 @@ def get_embedding(client: genai.Client, text: str) -> list[float]:
     Returns:
         List of floats representing the text in vector space
     """
-    result = client.models.embed_content(
-        model=EMBEDDING_MODEL,
-        contents=[text],   # SDK expects a list of contents
+    result =client .models .embed_content (
+    model =EMBEDDING_MODEL ,
+    contents =[text ],
     )
-    # result.embeddings is a list of ContentEmbedding objects.
-    # We pass one text string so we get back one embedding at index 0.
-    return result.embeddings[0].values
 
 
-# =============================================================================
-# Main
-# =============================================================================
+    return result .embeddings [0 ].values 
 
-def main(reset: bool = False):
-    print("=" * 60)
-    print("  Text-to-SQL RAG — ChromaDB Schema Setup")
-    print("=" * 60)
 
-    # Step 1: Validate Gemini API key
-    if not GEMINI_API_KEY or GEMINI_API_KEY == "your_gemini_api_key_here":
-        print("\n  ERROR: GEMINI_API_KEY is not set in your .env file.")
-        print("  Get your key from: https://aistudio.google.com/app/apikey")
-        print("  Then add it to .env: GEMINI_API_KEY=your_actual_key")
-        sys.exit(1)
 
-    print(f"\n  Embedding model : {EMBEDDING_MODEL}")
-    print(f"  ChromaDB path   : {CHROMA_PERSIST_DIR}")
-    print(f"  Collection name : {CHROMA_COLLECTION_NAME}")
 
-    # Step 2: Initialize ChromaDB with persistent local storage
-    print("\n[Step 1] Connecting to ChromaDB...")
-    chroma_client = chromadb.PersistentClient(path=CHROMA_PERSIST_DIR)
-    print(f"  ChromaDB connected. Data will persist at: {os.path.abspath(CHROMA_PERSIST_DIR)}")
 
-    # Step 3: Handle --reset (delete collection and start fresh)
-    if reset:
-        print("\n[Step 2] Deleting existing collection (--reset flag)...")
-        try:
-            chroma_client.delete_collection(name=CHROMA_COLLECTION_NAME)
-            print(f"  Collection '{CHROMA_COLLECTION_NAME}' deleted.")
-        except Exception:
-            print(f"  Collection did not exist — nothing to delete.")
-    else:
-        print("\n[Step 2] Checking for existing collection...")
 
-    # Step 4: Check if collection already has documents (skip if populated)
-    try:
-        existing = chroma_client.get_collection(name=CHROMA_COLLECTION_NAME)
-        count = existing.count()
-        if count > 0 and not reset:
-            print(f"  Collection '{CHROMA_COLLECTION_NAME}' already has {count} documents.")
-            print("  Skipping re-embedding (embeddings are preserved from last run).")
-            print("  Use --reset to force re-embedding.")
-            print("\n  Setup complete. ChromaDB is ready.")
-            return
-    except Exception:
-        print("  No existing collection found — will create fresh.")
+def main (reset :bool =False ):
+    print ("="*60 )
+    print ("  Text-to-SQL RAG — ChromaDB Schema Setup")
+    print ("="*60 )
 
-    # Step 5: Create the ChromaDB collection
-    # We use cosine similarity (standard for semantic search with embeddings).
-    # We do NOT use a built-in embedding function — we manage Gemini embeddings
-    # ourselves so we can use the same model for both schema and query embedding.
-    print("\n[Step 3] Creating ChromaDB collection...")
-    collection = chroma_client.get_or_create_collection(
-        name=CHROMA_COLLECTION_NAME,
-        metadata={"hnsw:space": "cosine"},  # cosine similarity for semantic search
+
+    if not GEMINI_API_KEY or GEMINI_API_KEY =="your_gemini_api_key_here":
+        print ("\n  ERROR: GEMINI_API_KEY is not set in your .env file.")
+        print ("  Get your key from: https://aistudio.google.com/app/apikey")
+        print ("  Then add it to .env: GEMINI_API_KEY=your_actual_key")
+        sys .exit (1 )
+
+    print (f"\n  Embedding model : {EMBEDDING_MODEL }")
+    print (f"  ChromaDB path   : {CHROMA_PERSIST_DIR }")
+    print (f"  Collection name : {CHROMA_COLLECTION_NAME }")
+
+
+    print ("\n[Step 1] Connecting to ChromaDB...")
+    chroma_client =chromadb .PersistentClient (path =CHROMA_PERSIST_DIR )
+    print (f"  ChromaDB connected. Data will persist at: {os .path .abspath (CHROMA_PERSIST_DIR )}")
+
+
+    if reset :
+        print ("\n[Step 2] Deleting existing collection (--reset flag)...")
+        try :
+            chroma_client .delete_collection (name =CHROMA_COLLECTION_NAME )
+            print (f"  Collection '{CHROMA_COLLECTION_NAME }' deleted.")
+        except Exception :
+            print (f"  Collection did not exist — nothing to delete.")
+    else :
+        print ("\n[Step 2] Checking for existing collection...")
+
+
+    try :
+        existing =chroma_client .get_collection (name =CHROMA_COLLECTION_NAME )
+        count =existing .count ()
+        if count >0 and not reset :
+            print (f"  Collection '{CHROMA_COLLECTION_NAME }' already has {count } documents.")
+            print ("  Skipping re-embedding (embeddings are preserved from last run).")
+            print ("  Use --reset to force re-embedding.")
+            print ("\n  Setup complete. ChromaDB is ready.")
+            return 
+    except Exception :
+        print ("  No existing collection found — will create fresh.")
+
+
+
+
+
+    print ("\n[Step 3] Creating ChromaDB collection...")
+    collection =chroma_client .get_or_create_collection (
+    name =CHROMA_COLLECTION_NAME ,
+    metadata ={"hnsw:space":"cosine"},
     )
-    print(f"  Collection '{CHROMA_COLLECTION_NAME}' ready.")
+    print (f"  Collection '{CHROMA_COLLECTION_NAME }' ready.")
 
-    # Step 6: Initialize Gemini client
-    print("\n[Step 4] Initializing Gemini embedding client...")
-    gemini_client = genai.Client(api_key=GEMINI_API_KEY)
-    print("  Gemini client initialized.")
 
-    # Step 7: Embed each schema document and store in ChromaDB
-    print(f"\n[Step 5] Embedding {len(SCHEMA_DOCUMENTS)} schema documents...")
-    print("  (Each document is converted to a vector by the Gemini embedding model)")
-    print()
+    print ("\n[Step 4] Initializing Gemini embedding client...")
+    gemini_client =genai .Client (api_key =GEMINI_API_KEY )
+    print ("  Gemini client initialized.")
 
-    for table_name, info in SCHEMA_DOCUMENTS.items():
-        print(f"  [{table_name}]")
-        print(f"    Sending schema document to Gemini ({EMBEDDING_MODEL})...", end="", flush=True)
 
-        embedding = get_embedding(gemini_client, info["document"])
+    print (f"\n[Step 5] Embedding {len (SCHEMA_DOCUMENTS )} schema documents...")
+    print ("  (Each document is converted to a vector by the Gemini embedding model)")
+    print ()
 
-        print(f" done. Vector dimension: {len(embedding)}")
-        print(f"    Storing in ChromaDB...", end="", flush=True)
+    for table_name ,info in SCHEMA_DOCUMENTS .items ():
+        print (f"  [{table_name }]")
+        print (f"    Sending schema document to Gemini ({EMBEDDING_MODEL })...",end ="",flush =True )
 
-        collection.add(
-            documents=[info["document"]],
-            embeddings=[embedding],
-            metadatas=[info["metadata"]],
-            ids=[table_name],         # Table name is the unique document ID
+        embedding =get_embedding (gemini_client ,info ["document"])
+
+        print (f" done. Vector dimension: {len (embedding )}")
+        print (f"    Storing in ChromaDB...",end ="",flush =True )
+
+        collection .add (
+        documents =[info ["document"]],
+        embeddings =[embedding ],
+        metadatas =[info ["metadata"]],
+        ids =[table_name ],
         )
-        print(" done.")
-        print()
-
-    # Step 8: Verify storage
-    final_count = collection.count()
-    print(f"[Step 6] Verification: {final_count} documents stored in ChromaDB.")
-
-    print("\n" + "=" * 60)
-    print("  ChromaDB setup complete!")
-    print("=" * 60)
-    print()
-    print("  What was stored:")
-    for table_name in SCHEMA_DOCUMENTS:
-        print(f"    - {table_name} schema document (with embedding)")
-    print()
-    print("  Next step: test retrieval with a sample question:")
-    print("    python -c \"")
-    print("      import sys; sys.path.insert(0,'.')")
-    print("      from app.retriever import retrieve_schema")
-    print("      results = retrieve_schema('which product sold the most?')")
-    print("      print([r['table_name'] for r in results])")
-    print("    \"")
-    print()
-    print("  Or run the full app: streamlit run main.py")
-    print()
+        print (" done.")
+        print ()
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Embed schema documents into ChromaDB for the Text-to-SQL RAG Assistant."
+    final_count =collection .count ()
+    print (f"[Step 6] Verification: {final_count } documents stored in ChromaDB.")
+
+    print ("\n"+"="*60 )
+    print ("  ChromaDB setup complete!")
+    print ("="*60 )
+    print ()
+    print ("  What was stored:")
+    for table_name in SCHEMA_DOCUMENTS :
+        print (f"    - {table_name } schema document (with embedding)")
+    print ()
+    print ("  Next step: test retrieval with a sample question:")
+    print ("    python -c \"")
+    print ("      import sys; sys.path.insert(0,'.')")
+    print ("      from app.retriever import retrieve_schema")
+    print ("      results = retrieve_schema('which product sold the most?')")
+    print ("      print([r['table_name'] for r in results])")
+    print ("    \"")
+    print ()
+    print ("  Or run the full app: streamlit run main.py")
+    print ()
+
+
+if __name__ =="__main__":
+    parser =argparse .ArgumentParser (
+    description ="Embed schema documents into ChromaDB for the Text-to-SQL RAG Assistant."
     )
-    parser.add_argument(
-        "--reset",
-        action="store_true",
-        help="Delete the existing ChromaDB collection and re-embed all documents.",
+    parser .add_argument (
+    "--reset",
+    action ="store_true",
+    help ="Delete the existing ChromaDB collection and re-embed all documents.",
     )
-    args = parser.parse_args()
+    args =parser .parse_args ()
 
-    if args.reset:
-        print("\nWARNING: --reset will delete all existing ChromaDB embeddings.")
-        confirm = input("Type 'yes' to confirm: ").strip().lower()
-        if confirm != "yes":
-            print("Aborted.")
-            sys.exit(0)
+    if args .reset :
+        print ("\nWARNING: --reset will delete all existing ChromaDB embeddings.")
+        confirm =input ("Type 'yes' to confirm: ").strip ().lower ()
+        if confirm !="yes":
+            print ("Aborted.")
+            sys .exit (0 )
 
-    main(reset=args.reset)
+    main (reset =args .reset )
